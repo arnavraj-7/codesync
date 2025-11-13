@@ -265,104 +265,241 @@ async function checkAndSendReminders() {
 // --- Email Templates (MODIFIED to be dynamic) ---
 
 function generate24HourEmail(contest, hoursUntilStart) {
-  // Default to 24 if for some reason hoursUntilStart isn't passed or is odd
-  const displayHours = hoursUntilStart ? `${hoursUntilStart} HOURS` : 'TOMORROW';
-  const headerText = hoursUntilStart ? `STARTING IN ${displayHours}` : 'CONTEST TOMORROW';
-  return `
-    <!DOCTYPE html>
-    <html>
-    <body style="margin:0;padding:0;background:#000;color:#fff;font-family:Arial,sans-serif;">
-      <div style="max-width:600px;margin:0 auto;background:#0a0a0a;">
-        <div style="padding:30px;text-align:center;border-bottom:1px solid #333;">
-          <h1 style="margin:0;font-size:2rem;">CodeSync</h1>
-          <div style="background:#ffaa00;color:#000;padding:6px 15px;display:inline-block;margin-top:10px;font-size:0.75rem;font-weight:700;">${headerText}</div>
-        </div>
-        <div style="padding:35px 30px;">
-          <h2 style="font-size:1.8rem;margin-bottom:25px;">${contest.name}</h2>
-          <div style="background:#1a1a1a;border:1px solid #333;padding:15px 20px;margin:10px 0;">
-            <div style="color:#888;font-size:0.85rem;">PLATFORM</div>
-            <div style="color:#fff;font-weight:600;font-size:1rem;">${contest.platform}</div>
-          </div>
-          <div style="background:#1a1a1a;border:1px solid #333;padding:15px 20px;margin:10px 0;">
-            <div style="color:#888;font-size:0.85rem;">START TIME</div>
-            <div style="color:#fff;font-weight:600;font-size:1rem;">${new Date(contest.startTime).toLocaleString()}</div>
-          </div>
-          <div style="text-align:center;margin:25px 0;">
-            <a href="${contest.url}" style="background:#fff;color:#000;padding:18px 50px;text-decoration:none;font-weight:700;display:inline-block;">View Contest</a>
-          </div>
-        </div>
-        <div style="background:#000;padding:25px;text-align:center;border-top:1px solid #333;color:#666;font-size:0.8rem;">
-          <p>CodeSync - Made by Arnav</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  const displayHours = hoursUntilStart ? `${hoursUntilStart} HOURS` : 'TOMORROW';
+  const headerText = hoursUntilStart ? `STARTING IN ${displayHours}` : 'CONTEST TOMORROW';
+  
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contest Reminder - CodeSync</title>
+        <style>
+            body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; color: #333; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+            table { border-spacing: 0; border-collapse: collapse; }
+            td { padding: 0; }
+            img { border: 0; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 60px; }
+            .main { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+            .header { background-color: #1a1a1a; padding: 30px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 2.5rem; font-weight: 700; letter-spacing: 2px; }
+            .header .tag { background-color: #ffaa00; color: #1a1a1a; padding: 8px 18px; display: inline-block; margin-top: 15px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-radius: 4px; }
+            .content { padding: 40px 30px; text-align: center; }
+            .content h2 { font-size: 2rem; margin-bottom: 30px; color: #1a1a1a; line-height: 1.3; }
+            .info-block { background-color: #f9f9f9; border: 1px solid #e0e0e0; padding: 20px 25px; margin: 15px 0; border-radius: 6px; text-align: left; }
+            .info-block .label { color: #888; font-size: 0.85rem; margin-bottom: 5px; text-transform: uppercase; font-weight: 600; }
+            .info-block .value { color: #333; font-weight: 700; font-size: 1.1rem; }
+            .button-container { text-align: center; margin-top: 40px; }
+            .button { background-color: #007bff; color: #ffffff; padding: 18px 50px; text-decoration: none; font-weight: 700; display: inline-block; border-radius: 6px; font-size: 1.05rem; transition: background-color 0.3s ease; }
+            .button:hover { background-color: #0056b3; }
+            .footer { background-color: #1a1a1a; padding: 30px; text-align: center; color: #cccccc; font-size: 0.8rem; border-top: 1px solid #333; }
+            .footer p { margin: 0; }
+
+            @media only screen and (max-width: 620px) {
+                .main { width: 100%; border-radius: 0; }
+                .content { padding: 30px 20px; }
+                .header h1 { font-size: 2rem; }
+                .content h2 { font-size: 1.6rem; }
+                .button { padding: 15px 40px; font-size: 1rem; }
+            }
+        </style>
+    </head>
+    <body>
+        <center class="wrapper">
+            <div class="main">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="header">
+                            <h1>CodeSync</h1>
+                            <div class="tag">${headerText}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <h2>${contest.name}</h2>
+                            <div class="info-block">
+                                <div class="label">PLATFORM</div>
+                                <div class="value">${contest.platform}</div>
+                            </div>
+                            <div class="info-block">
+                                <div class="label">START TIME</div>
+                                <div class="value">${new Date(contest.startTime).toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}</div>
+                            </div>
+                            <div class="button-container">
+                                <a href="${contest.url}" class="button">View Contest</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>CodeSync - Made by Arnav</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </center>
+    </body>
+    </html>
+  `;
 }
 
 function generate1HourEmail(contest, displayTime) {
-  // displayTime will be like "1 hour", "3 hours", "45 minutes"
-  const headerText = displayTime ? `⚡ STARTING IN ${displayTime.toUpperCase()}` : '⚡ STARTING SOON';
-  const centralText = displayTime ? displayTime.toUpperCase() : 'SOON';
+  const headerText = displayTime ? `⚡ STARTING IN ${displayTime.toUpperCase()}` : '⚡ STARTING SOON';
+  const centralText = displayTime ? displayTime.toUpperCase() : 'SOON';
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <body style="margin:0;padding:0;background:#000;color:#fff;font-family:Arial,sans-serif;">
-      <div style="max-width:600px;margin:0 auto;background:#0a0a0a;">
-        <div style="padding:30px;text-align:center;border-bottom:2px solid #f00;">
-          <h1 style="margin:0;font-size:2rem;">CodeSync</h1>
-          <div style="background:#f00;color:#fff;padding:8px 20px;display:inline-block;margin-top:10px;font-size:0.8rem;font-weight:700;">${headerText}</div>
-        </div>
-        <div style="padding:35px 30px;">
-          <div style="color:#f00;font-size:1.1rem;font-weight:700;margin-bottom:20px;">🚨 STARTING SOON!</div>
-          <h2 style="font-size:1.8rem;margin-bottom:25px;">${contest.name}</h2>
-          <div style="background:#1a1a1a;border:2px solid #f00;padding:20px;text-align:center;margin:25px 0;">
-            <div style="color:#f00;font-size:2rem;font-weight:700;">${centralText}</div>
-            <div style="color:#888;font-size:0.9rem;">Until Contest Starts</div>
-          </div>
-          <div style="text-align:center;margin:25px 0;">
-            <a href="${contest.url}" style="background:#f00;color:#fff;padding:18px 50px;text-decoration:none;font-weight:700;display:inline-block;">Join Contest Now</a>
-          </div>
-        </div>
-        <div style="background:#000;padding:25px;text-align:center;border-top:1px solid #333;color:#666;font-size:0.8rem;">
-          <p>CodeSync - Made by Arnav</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contest Starting Soon! - CodeSync</title>
+        <style>
+            body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; color: #333; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+            table { border-spacing: 0; border-collapse: collapse; }
+            td { padding: 0; }
+            img { border: 0; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 60px; }
+            .main { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+            .header { background-color: #e74c3c; padding: 30px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 2.5rem; font-weight: 700; letter-spacing: 2px; }
+            .header .tag { background-color: #c0392b; color: #ffffff; padding: 8px 18px; display: inline-block; margin-top: 15px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; border-radius: 4px; }
+            .content { padding: 40px 30px; text-align: center; }
+            .content .alert-text { color: #e74c3c; font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+            .content h2 { font-size: 2.2rem; margin-bottom: 30px; color: #1a1a1a; line-height: 1.3; }
+            .countdown-box { background-color: #fff0f0; border: 2px solid #e74c3c; padding: 25px; margin: 25px 0; border-radius: 8px; }
+            .countdown-box .time { color: #e74c3c; font-size: 2.8rem; font-weight: 900; line-height: 1; margin-bottom: 10px; }
+            .countdown-box .label { color: #888; font-size: 0.9rem; text-transform: uppercase; font-weight: 600; }
+            .button-container { text-align: center; margin-top: 40px; }
+            .button { background-color: #e74c3c; color: #ffffff; padding: 18px 50px; text-decoration: none; font-weight: 700; display: inline-block; border-radius: 6px; font-size: 1.05rem; transition: background-color 0.3s ease; }
+            .button:hover { background-color: #c0392b; }
+            .footer { background-color: #1a1a1a; padding: 30px; text-align: center; color: #cccccc; font-size: 0.8rem; border-top: 1px solid #333; }
+            .footer p { margin: 0; }
+
+            @media only screen and (max-width: 620px) {
+                .main { width: 100%; border-radius: 0; }
+                .content { padding: 30px 20px; }
+                .header h1 { font-size: 2rem; }
+                .content h2 { font-size: 1.8rem; }
+                .countdown-box .time { font-size: 2.2rem; }
+                .button { padding: 15px 40px; font-size: 1rem; }
+            }
+        </style>
+    </head>
+    <body>
+        <center class="wrapper">
+            <div class="main">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="header">
+                            <h1>CodeSync</h1>
+                            <div class="tag">${headerText}</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <div class="alert-text">🚨 Contest Alert!</div>
+                            <h2>${contest.name}</h2>
+                            <div class="countdown-box">
+                                <div class="time">${centralText}</div>
+                                <div class="label">UNTIL CONTEST STARTS</div>
+                            </div>
+                            <div class="button-container">
+                                <a href="${contest.url}" class="button">Join Contest Now</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>CodeSync - Made by Arnav</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </center>
+    </body>
+    </html>
+  `;
 }
 
 function generateWelcomeEmail() {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <body style="margin:0;padding:0;background:#000;color:#fff;font-family:Arial,sans-serif;">
-      <div style="max-width:600px;margin:0 auto;background:#0a0a0a;">
-        <div style="padding:40px 30px;text-align:center;border-bottom:1px solid #333;">
-          <h1 style="margin:0;font-size:2.5rem;">CodeSync</h1>
-          <p style="color:#888;font-size:0.9rem;margin-top:10px;">Your Competitive Programming Companion</p>
-        </div>
-        <div style="padding:40px 30px;">
-          <h2>Welcome Aboard! 🚀</h2>
-          <p style="color:#aaa;line-height:1.8;margin:20px 0;">You're now subscribed to CodeSync! You'll receive timely reminders for coding contests from top platforms.</p>
-          <div style="background:#1a1a1a;border:1px solid #333;padding:20px;margin:15px 0;">
-            <div style="font-weight:600;margin-bottom:8px;">⏰ Smart Reminders</div>
-            <div style="color:#888;font-size:0.9rem;">Get notified 24 hours and 1 hour before contests start</div>
-          </div>
-          <div style="background:#1a1a1a;border:1px solid #333;padding:20px;margin:15px 0;">
-            <div style="font-weight:600;margin-bottom:8px;">🌐 Multi-Platform Coverage</div>
-            <div style="color:#888;font-size:0.9rem;">Track contests from Codeforces, CodeChef, LeetCode, and more</div>
-          </div>
-        </div>
-        <div style="background:#000;padding:30px;text-align:center;border-top:1px solid #333;color:#666;font-size:0.85rem;">
-          <p>CodeSync - Made by Arnav</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to CodeSync! - Your Competitive Programming Companion</title>
+        <style>
+            body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; color: #333; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+            table { border-spacing: 0; border-collapse: collapse; }
+            td { padding: 0; }
+            img { border: 0; }
+            .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 60px; }
+            .main { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+            .header { background-color: #007bff; padding: 40px 30px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 3rem; font-weight: 800; letter-spacing: 3px; }
+            .header p { margin-top: 10px; font-size: 1rem; color: #e0e0e0; }
+            .content { padding: 40px 30px; }
+            .content h2 { font-size: 2.2rem; margin-bottom: 25px; color: #1a1a1a; text-align: center; }
+            .content p { color: #555; line-height: 1.7; margin-bottom: 25px; text-align: center; font-size: 1rem; }
+            .feature-block { background-color: #f9f9f9; border: 1px solid #e0e0e0; padding: 25px; margin: 15px 0; border-radius: 8px; text-align: left; }
+            .feature-block .title { font-weight: 700; margin-bottom: 10px; font-size: 1.15rem; color: #1a1a1a; }
+            .feature-block .description { color: #777; font-size: 0.95rem; line-height: 1.5; }
+            .footer { background-color: #1a1a1a; padding: 30px; text-align: center; color: #cccccc; font-size: 0.8rem; border-top: 1px solid #333; }
+            .footer p { margin: 0; }
+
+            @media only screen and (max-width: 620px) {
+                .main { width: 100%; border-radius: 0; }
+                .content { padding: 30px 20px; }
+                .header h1 { font-size: 2.5rem; }
+                .content h2 { font-size: 1.8rem; }
+            }
+        </style>
+    </head>
+    <body>
+        <center class="wrapper">
+            <div class="main">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="header">
+                            <h1>CodeSync</h1>
+                            <p>Your Competitive Programming Companion</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <h2>Welcome Aboard! 🚀</h2>
+                            <p>You're now subscribed to CodeSync! Get ready to supercharge your competitive programming journey with timely reminders for coding contests from top platforms.</p>
+                            
+                            <div class="feature-block">
+                                <div class="title">⏰ Smart Reminders</div>
+                                <div class="description">Get notified 24 hours and 1 hour before contests begin, so you never miss a challenge.</div>
+                            </div>
+                            
+                            <div class="feature-block">
+                                <div class="title">🌐 Multi-Platform Coverage</div>
+                                <div class="description">We track contests from Codeforces, CodeChef, LeetCode, and more, all in one place.</div>
+                            </div>
+
+                            <div class="feature-block">
+                                <div class="title">🚀 Stay Ahead</div>
+                                <div class="description">Focus on coding, we'll handle the reminders. Improve your skills and climb leaderboards.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer">
+                            <p>CodeSync - Made by Arnav</p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </center>
+    </body>
+    </html>
+  `;
 }
 
 // --- API Routes ---
