@@ -700,7 +700,7 @@
         </footer>
     </div>
 
-   <script>
+<script>
     let allContests = [];
     let currentFilter = 'all';
 
@@ -818,7 +818,7 @@
         e.preventDefault();
 
         const email = document.getElementById('email').value;
-        const phone = document.getElementById('phone').value;
+        // const phone = document.getElementById('phone').value; // REMOVED THIS LINE
         const preferences = Array.from(document.querySelectorAll('input[name="preference"]:checked'))
             .map(cb => cb.value);
 
@@ -833,16 +833,17 @@
 
         try {
             // Call subscribeUser and get the full response data
-            const data = await subscribeUser(email, phone, preferences);
+            // Pass null or an empty string for phone since it's no longer an input field
+            const data = await subscribeUser(email, null, preferences); // CHANGED THIS LINE
 
             if (data.success) {
                 showMessage(data.message, 'success'); // Use the message from the backend
                 document.getElementById('subscribeForm').reset();
 
-                // Reset to email checked by default
+                // Ensure only email is checked by default after reset
                 document.querySelector('input[value="email"]').checked = true;
-                // Ensure SMS is unchecked if it was previously checked
-                document.querySelector('input[value="sms"]').checked = false; 
+                // Since SMS checkbox is commented out, no need to specifically uncheck it here.
+                // If you re-introduce it as disabled but visible, you might re-add an explicit uncheck.
 
             } else {
                 // If backend indicates failure, show its error message
@@ -864,7 +865,6 @@
             body: JSON.stringify({ email, phone, preferences })
         });
 
-        // Always return the JSON data, don't throw an error here based on data.success
         const data = await response.json();
         return data;
     }
