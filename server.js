@@ -487,3 +487,32 @@ app.get('/api/check-reminders', async (req, res) => {
 });
 
 
+// --- Server Start ---
+logger.info('Connecting to database...');
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        logger.server(`Server running on port ${PORT}`);
+    });
+    
+    logger.info('Running initial contest fetch on startup...');
+    checkAndSendReminders(); // This will run immediately after server starts, then the cron will take over
+}).catch(error => {
+    logger.error('Failed to start application due to DB connection or initial setup:', error.message);
+    process.exit(1); // Exit the process with an error code
+});
+
+
+// --- CRON Job (for scheduling checkAndSendReminders) ---
+// This cron job will run every 6 hours
+// It's commented out because Render's cron jobs will hit the /api/check-reminders endpoint.
+// If you were self-hosting, you would uncomment this.
+
+// cron.schedule('0 */6 * * *', async () => { // Runs every 6 hours
+//     logger.cron('CRON job: Automatically checking and sending reminders...');
+//     await checkAndSendReminders();
+// }, {
+//     scheduled: true,
+//     timezone: "Asia/Kolkata" // Or your desired timezone
+// });
+// logger.cron('Scheduled cron job to run every 6 hours.');
+
