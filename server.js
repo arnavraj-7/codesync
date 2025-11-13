@@ -23,12 +23,16 @@ app.use(express.static('public')); // Your index.html should be in a 'public' fo
 let transporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
+    host: 'smtp.gmail.com',
+    port: 465, // Use 465 for implicit SSL
+    secure: true, // Use true for port 465
+    auth: {
+        user: process.env.EMAIL_USER, // Your Gmail email address
+        pass: process.env.EMAIL_PASS // The App Password you generated
+    }
+    // Optional for debugging if you get SSL errors, but NOT for production:
+    // tls: { rejectUnauthorized: false }
+});
   logger.success('Email configured');
 } else {
   logger.warn('Email not configured. EMAIL_USER or EMAIL_PASS missing.');
