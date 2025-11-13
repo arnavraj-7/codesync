@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeSync - Your Competitive Programming Companion</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 60px 20px 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 4.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -3px;
+            background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.5;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .platforms {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .platform-badge {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 8px 18px;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            cursor: default;
+        }
+
+        .platform-badge:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        /* --- NEW SHARE BUTTON --- */
+        .premium-share-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 22px;
+            margin-top: 35px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.8);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .premium-share-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #ffd700; /* Gold color for 'premium' star */
+        }
+
+        .premium-share-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+        /* --- END SHARE BUTTON --- */
+
+
+        /* Main Layout */
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #ffffff;
+            margin-bottom: 30px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -1px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 12px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 400;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        input[type="email"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ffffff;
+            background: rgba(255,255,255,0.08);
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.3);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 25px;
+            margin-top: 15px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+            transition: color 0.3s;
+        }
+
+        .checkbox-label:hover {
+            color: #ffffff;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #ffffff;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            background: #ffffff;
+            color: #000000;
+            border: 1px solid #ffffff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: transparent;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Message Styles */
+        .message {
+            padding: 16px;
+            margin-bottom: 25px;
+            display: none;
+            border: 1px solid;
+            font-size: 0.8rem;
+        }
+
+        .message.success {
+            background: rgba(0,255,0,0.05);
+            color: #00ff00;
+            border-color: rgba(0,255,0,0.3);
+        }
+
+        .message.error {
+            background: rgba(255,0,0,0.05);
+            color: #ff0000;
+            border-color: rgba(255,0,0,0.3);
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .filter-section h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            width: auto;
+        }
+
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
+        }
+
+        .filter-btn.active {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        /* Contest List */
+        .contests-list {
+            max-height: 800px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .contests-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .contests-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .contests-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .contests-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Contest Item */
+        .contest-item {
+            background: rgba(255,255,255,0.02);
+            padding: 25px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contest-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: #ffffff;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .contest-item:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .contest-item:hover::before {
+            opacity: 1;
+        }
+
+        /* Time-based borders */
+        .contest-item.urgent {
+            border-left: 3px solid #ff0000;
+        }
+
+        .contest-item.soon {
+            border-left: 3px solid #ffaa00;
+        }
+
+        .contest-item.upcoming {
+            border-left: 3px solid #00ff00;
+        }
+
+        .contest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+            gap: 20px;
+        }
+
+        .contest-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            flex: 1;
+            line-height: 1.3;
+        }
+
+        .platform-tag {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            font-size: 0.65rem;
+            white-space: nowrap;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .time-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border: 1px solid;
+        }
+
+        .time-badge.urgent {
+            color: #ff0000;
+            border-color: rgba(255,0,0,0.3);
+            background: rgba(255,0,0,0.05);
+        }
+
+        .time-badge.soon {
+            color: #ffaa00;
+            border-color: rgba(255,170,0,0.3);
+            background: rgba(255,170,0,0.05);
+        }
+
+        .time-badge.upcoming {
+            color: #00ff00;
+            border-color: rgba(0,255,0,0.3);
+            background: rgba(0,255,0,0.05);
+        }
+
+        .contest-details {
+            font-size: 0.8rem;
+            line-height: 1.8;
+            opacity: 0.6;
+        }
+
+        .contest-details span {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .contest-link {
+            margin-top: 15px;
+        }
+
+        .contest-link a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .contest-link a:hover {
+            border-bottom-color: #ffffff;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 80px 20px;
+            opacity: 0.5;
+        }
+
+        .spinner {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-box p {
+            font-size: 0.8rem;
+            line-height: 1.6;
+            opacity: 0.6;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            opacity: 0.4;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        footer p {
+            margin-bottom: 8px;
+        }
+
+        small {
+            opacity: 0.5;
+            font-size: 0.7rem;
+        }
+
+        .no-contests {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.4;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+                letter-spacing: -2px;
+            }
+
+            .subtitle {
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+            }
+
+            header {
+                padding: 40px 20px 30px;
+                margin-bottom: 40px;
+            }
+
+            .card {
+                padding: 30px 20px;
+            }
+
+            .card h2 {
+                font-size: 1.4rem;
+            }
+
+            .contest-name {
+                font-size: 0.95rem;
+            }
+
+            .contest-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .platform-tag {
+                align-self: flex-start;
+            }
+
+            .filter-buttons {
+                gap: 8px;
+            }
+
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 0.65rem;
+            }
+
+            .checkbox-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .platforms {
+                gap: 8px;
+            }
+
+            .platform-badge {
+                font-size: 0.65rem;
+                padding: 6px 12px;
+            }
+
+            .card {
+                padding: 25px 15px;
+            }
+
+            .main-content {
+                gap: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CodeSync</h1>
+            <p class="subtitle">Your Competitive Programming Companion</p>
+            <div class="platforms">
+                <span class="platform-badge">Codeforces</span>
+                <span class="platform-badge">CodeChef</span>
+                <span class="platform-badge">LeetCode</span>
+                <span class="platform-badge">AtCoder</span>
+            </div>
+            
+            <button id="premiumShareBtn" class="premium-share-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
+                </svg>
+                <span>Share with Friends</span>
+            </button>
+        </header>
+
+        <div class="main-content">
+            <div class="card">
+                <h2>Get Reminders</h2>
+                
+                <div id="subscribeMessage" class="message"></div>
+
+                <div class="info-box">
+                    <p>Receive notifications 24 hours and 1 hour before contests start. Never miss an opportunity to compete.</p>
+                </div>
+
+                <form id="subscribeForm">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" required placeholder="your.email@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number (Optional)</label>
+                        <input type="tel" id="phone" placeholder="+1234567890">
+                        <small style="opacity: 0.4; font-size: 0.7rem;">For SMS notifications via Twilio</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notification Method</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="preference" value="email" checked>
+                                <span>Email</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="preference" value="sms">
+                                <span>SMS</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="subscribeBtn">Subscribe Now</button>
+                </form>
+
+                </div>
+
+            <div class="card">
+                <h2>Upcoming Contests</h2>
+
+                <div class="filter-section">
+                    <h3>Filter by Platform</h3>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterContests('all')">All</button>
+                        <button class="filter-btn" onclick="filterContests('Codeforces')">Codeforces</button>
+                        <button class="filter-btn" onclick="filterContests('CodeChef')">CodeChef</button>
+                        <button class="filter-btn" onclick="filterContests('LeetCode')">LeetCode</button>
+                        <button class="filter-btn" onclick="filterContests('AtCoder')">AtCoder</button>
+                    </div>
+                </div>
+
+                <div id="contestsList" class="contests-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading contests...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>CODESYNC</p>
+            <p>Made with love and lots of coffee by Arnav</p>
+            <p style="margin-top: 15px; opacity: 0.6;">Contest times displayed in your local timezone</p>
+        </footer>
+    </div>
+
+    <script>
+        let allContests = [];
+        let currentFilter = 'all';
+
+        // Load contests on page load
+        async function loadContests() {
+            try {
+                const response = await fetch('/api/contests');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allContests = data.contests;
+                    displayContests(allContests);
+                } else {
+                    document.getElementById('contestsList').innerHTML = 
+                        '<p class="no-contests">Failed to load contests</p>';
+                }
+            } catch (error) {
+                document.getElementById('contestsList').innerHTML = 
+                    '<p class="no-contests">Error loading contests</p>';
+            }
+        }
+
+        function getTimeCategory(hoursUntil) {
+            if (hoursUntil < 0) return null;
+            if (hoursUntil < 24) return 'urgent';      // Less than 24 hours - RED
+            if (hoursUntil < 168) return 'soon';       // 1-7 days - ORANGE 
+            return 'upcoming';                         // More than 7 days - GREEN
+        }
+
+        function displayContests(contests) {
+            const contestsList = document.getElementById('contestsList');
+            
+            // Apply filter before displaying
+            const filteredContests = contests.filter(contest => {
+                if (currentFilter === 'all') return true;
+                return contest.platform === currentFilter;
+            });
+            
+            if (filteredContests.length === 0) {
+                if (currentFilter === 'all') {
+                    contestsList.innerHTML = '<p class="no-contests">No contests found</p>';
+                } else {
+                    contestsList.innerHTML = `<p class="no-contests">No contests found for ${currentFilter}</p>`;
+                }
+                return;
+            }
+
+            contestsList.innerHTML = filteredContests.map(contest => {
+                const startTime = new Date(contest.startTime);
+                const now = new Date();
+                const hoursUntil = (startTime - now) / (1000 * 60 * 60);
+                
+                let timeText;
+                let timeBadge = '';
+                
+                if (hoursUntil < 0) {
+                    timeText = 'Started';
+                } else if (hoursUntil < 1) {
+                    const minutes = Math.floor(hoursUntil * 60);
+                    timeText = `Starting in ${minutes} minutes`;
+                    timeBadge = '<span class="time-badge urgent">STARTING NOW</span>';
+                } else if (hoursUntil < 24) {
+                    const hours = Math.floor(hoursUntil);
+                    timeText = `Starting in ${hours} hour${hours > 1 ? 's' : ''}`;
+                    timeBadge = '<span class="time-badge urgent">TODAY</span>';
+                } else if (hoursUntil < 168) {
+                    const days = Math.floor(hoursUntil / 24);
+                    timeText = `Starting in ${days} day${days > 1 ? 's' : ''}`;
+                    timeBadge = '<span class="time-badge soon">THIS WEEK</span>';
+                } else {
+                    const days = Math.floor(hoursUntil / 24);
+                    timeText = `Starting in ${days} days`;
+                    timeBadge = '<span class="time-badge upcoming">UPCOMING</span>';
+                }
+
+                const timeCategory = getTimeCategory(hoursUntil);
+                
+                return `
+                    <div class="contest-item ${timeCategory || ''}" data-platform="${contest.platform}">
+                        ${timeBadge}
+                        <div class="contest-header">
+                            <div class="contest-name">${contest.name}</div>
+                            <div class="platform-tag">${contest.platform}</div>
+                        </div>
+                        <div class="contest-details">
+                            <span>${timeText}</span>
+                            <span>${startTime.toLocaleString()}</span>
+                            <span>Duration: ${contest.duration} hours</span>
+                        </div>
+                        <div class="contest-link">
+                            <a href="${contest.url}" target="_blank">View Contest</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterContests(platform) {
+            currentFilter = platform;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === platform.toLowerCase()) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Re-display contests with the new filter
+            displayContests(allContests);
+        }
+
+        // Handle subscription form
+        document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const preferences = Array.from(document.querySelectorAll('input[name="preference"]:checked'))
+                .map(cb => cb.value);
+            
+            if (preferences.length === 0) {
+                showMessage('Please select at least one notification method', 'error');
+                return;
+            }
+
+            const subscribeBtn = document.getElementById('subscribeBtn');
+            subscribeBtn.disabled = true;
+            subscribeBtn.textContent = 'Subscribing...';
+
+            try {
+                // Subscribe main user
+                await subscribeUser(email, phone, preferences);
+                
+                showMessage('Successfully subscribed! Check your email for confirmation.', 'success');
+                document.getElementById('subscribeForm').reset();
+                
+                // Reset to email checked by default
+                document.querySelector('input[value="email"]').checked = true;
+            } catch (error) {
+                showMessage('Subscription failed. Please try again.', 'error');
+            } finally {
+                subscribeBtn.disabled = false;
+                subscribeBtn.textContent = 'Subscribe Now';
+            }
+        });
+
+        async function subscribeUser(email, phone, preferences) {
+            const response = await fetch('/api/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, phone, preferences })
+            });
+            
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('subscribeMessage');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type} show`;
+            
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 5000);
+        }
+
+        // --- NEW SHARE BUTTON LOGIC ---
+        const shareBtn = document.getElementById('premiumShareBtn');
+        if (shareBtn) {
+            const shareBtnSpan = shareBtn.querySelector('span');
+            const originalBtnText = shareBtnSpan.textContent;
+
+            shareBtn.addEventListener('click', async () => {
+                const shareData = {
+                    title: 'CodeSync',
+                    text: 'Check out CodeSync - Your Competitive Programming Companion!',
+                    url: window.location.href
+                };
+                
+                try {
+                    if (navigator.share) {
+                        // Use Web Share API
+                        await navigator.share(shareData);
+                        console.log('Shared successfully via Web Share API');
+                    } else {
+                        // Fallback: Copy to clipboard
+                        await navigator.clipboard.writeText(window.location.href);
+                        shareBtnSpan.textContent = 'Link Copied!';
+                        shareBtn.style.opacity = '0.7';
+
+                        setTimeout(() => {
+                            shareBtnSpan.textContent = originalBtnText;
+                            shareBtn.style.opacity = '1';
+                        }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Share failed:', err);
+                    // Final fallback in case of error
+                    try {
+                        await navigator.clipboard.writeText(window.location.href);
+                        shareBtnSpan.textContent = 'Link Copied!';
+                        shareBtn.style.opacity = '0.7';
+                        setTimeout(() => {
+                            shareBtnSpan.textContent = originalBtnText;
+                            shareBtn.style.opacity = '1';
+                        }, 2000);
+                    } catch (copyErr) {
+                        console.error('Clipboard copy failed:', copyErr);
+                        shareBtnSpan.textContent = 'Share Failed';
+                         setTimeout(() => {
+                            shareBtnSpan.textContent = originalBtnText;
+                        }, 2000);
+                    }
+                }
+            });
+        }
+        
+        // Load contests on page load
+        loadContests();
+        
+        // Refresh contests every 5 minutes
+        setInterval(loadContests, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
