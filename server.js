@@ -1,38 +1,22 @@
+// --- server.js ---
+// Refactored to use MongoDB instead of data.json
+
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-const fs = require('fs').promises;
-const path = require('path');
 require('dotenv').config();
+
 const logger = require('./logger');
+const { connectDB, getDb } = require('./database'); // Import DB functions
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
-
-const DATA_FILE = path.join(__dirname, 'data.json');
-
-async function initDataFile() {
-  try {
-    await fs.access(DATA_FILE);
-  } catch {
-    await fs.writeFile(DATA_FILE, JSON.stringify({ subscribers: [], contests: [] }));
-  }
-}
-
-async function readData() {
-  const data = await fs.readFile(DATA_FILE, 'utf8');
-  return JSON.parse(data);
-}
-
-async function writeData(data) {
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-}
+app.use(express.static('public')); // Your index.html should be in a 'public' folder
 
 // Email setup
 let transporter;
@@ -46,7 +30,7 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   });
   logger.success('Email configured');
 } else {
-  logger.warn('Email not configured');
+  logger.warn('Email not configured. EMAIL_USER or EMAIL_PASS missing.');
 }
 
 // Twilio setup
@@ -77,7 +61,7 @@ async function fetchContests() {
       contests.push(...upcomingCF);
     }
   } catch (error) {
-    logger.error('Error fetching Codeforces', error);
+    logger.error('Error fetching Codeforces', error.message);
   }
 
   try {
@@ -93,7 +77,7 @@ async function fetchContests() {
       contests.push(...upcomingCC);
     }
   } catch (error) {
-    logger.error('Error fetching CodeChef', error);
+    logger.error('Error fetching CodeChef', error.message);
   }
 
   try {
@@ -124,8 +108,10 @@ async function fetchContests() {
       contests.push(...upcomingLC);
     }
   } catch (error) {
-    logger.error('Error fetching LeetCode', error);
+    logger.error('Error fetching LeetCode', error.message);
   }
+
+  // TODO: Add AtCoder fetch logic here if you have an API for it
 
   contests.sort((a, b) => a.startTime - b.startTime);
   return contests;
@@ -133,10 +119,9 @@ async function fetchContests() {
 
 async function sendEmail(to, subject, html) {
   if (!transporter) {
-    logger.warn('Email not configured');
+    logger.warn('Email not configured, skipping send.');
     return false;
   }
-
   try {
     await transporter.sendMail({
       from: `"CodeSync" <${process.env.EMAIL_USER}>`,
@@ -154,12 +139,10 @@ async function sendEmail(to, subject, html) {
 
 async function sendSMS(to, message) {
   logger.sms('Sending SMS to ' + to);
-
   if (!twilioClient) {
-    logger.error('Twilio not configured!');
+    logger.error('Twilio not configured! Skipping SMS.');
     return false;
   }
-
   try {
     const result = await twilioClient.messages.create({
       body: message,
@@ -178,27 +161,40 @@ async function checkAndSendReminders() {
   logger.cron('Checking reminders...');
   
   try {
-    const data = await readData();
+    const db = getDb(); // Get the connected DB instance
+    const subscribersCol = db.collection('subscribers');
+    const contestsCol = db.collection('contests');
+
     const contests = await fetchContests();
-    data.contests = contests;
-    await writeData(data);
+    
+    // Update the contest list in the DB
+    await contestsCol.deleteMany({}); // Clear old contests
+    if (contests.length > 0) {
+        await contestsCol.insertMany(contests); // Insert new ones
+    }
+    logger.cron(`Fetched and saved ${contests.length} contests.`);
+
+    const subscribers = await subscribersCol.find().toArray();
+    if (subscribers.length === 0) {
+        logger.cron('No subscribers found. Skipping reminder check.');
+        return;
+    }
+    logger.cron(`Checking reminders for ${subscribers.length} subscribers...`);
 
     const now = new Date();
     
     for (const contest of contests) {
-      const hoursUntilStart = (contest.startTime - now) / (1000 * 3600);
+      const hoursUntilStart = (new Date(contest.startTime) - now) / (1000 * 3600);
       
       // 24 hour reminder
       if (hoursUntilStart > 23 && hoursUntilStart < 25) {
         logger.info('Contest in 24h: ' + contest.name);
-        
-        for (const subscriber of data.subscribers) {
+        for (const subscriber of subscribers) {
           if (subscriber.preferences.includes('email')) {
             await sendEmail(subscriber.email, `Contest Tomorrow: ${contest.name}`, generate24HourEmail(contest));
           }
-          
           if (subscriber.preferences.includes('sms') && subscriber.phone) {
-            await sendSMS(subscriber.phone, `Contest Tomorrow: ${contest.name} on ${contest.platform} at ${contest.startTime.toLocaleString()}. ${contest.url}`);
+            await sendSMS(subscriber.phone, `Contest Tomorrow: ${contest.name} on ${contest.platform} at ${new Date(contest.startTime).toLocaleString()}. ${contest.url}`);
           }
         }
       }
@@ -206,12 +202,10 @@ async function checkAndSendReminders() {
       // 1 hour reminder
       if (hoursUntilStart > 0.5 && hoursUntilStart < 1.5) {
         logger.info('Contest in 1h: ' + contest.name);
-        
-        for (const subscriber of data.subscribers) {
+        for (const subscriber of subscribers) {
           if (subscriber.preferences.includes('email')) {
             await sendEmail(subscriber.email, `Starting in 1 Hour: ${contest.name}`, generate1HourEmail(contest));
           }
-          
           if (subscriber.preferences.includes('sms') && subscriber.phone) {
             await sendSMS(subscriber.phone, `Starting in 1 hour: ${contest.name} on ${contest.platform}. ${contest.url}`);
           }
@@ -223,7 +217,11 @@ async function checkAndSendReminders() {
   }
 }
 
+// --- Email Templates (generate24HourEmail, generate1HourEmail, generateWelcomeEmail) ---
+// (These functions are unchanged, placing them here for completeness)
+
 function generate24HourEmail(contest) {
+  // ... (Your existing HTML email template)
   return `
     <!DOCTYPE html>
     <html>
@@ -241,7 +239,7 @@ function generate24HourEmail(contest) {
           </div>
           <div style="background:#1a1a1a;border:1px solid #333;padding:15px 20px;margin:10px 0;">
             <div style="color:#888;font-size:0.85rem;">START TIME</div>
-            <div style="color:#fff;font-weight:600;font-size:1rem;">${contest.startTime.toLocaleString()}</div>
+            <div style="color:#fff;font-weight:600;font-size:1rem;">${new Date(contest.startTime).toLocaleString()}</div>
           </div>
           <div style="text-align:center;margin:25px 0;">
             <a href="${contest.url}" style="background:#fff;color:#000;padding:18px 50px;text-decoration:none;font-weight:700;display:inline-block;">View Contest</a>
@@ -257,6 +255,7 @@ function generate24HourEmail(contest) {
 }
 
 function generate1HourEmail(contest) {
+  // ... (Your existing HTML email template)
   return `
     <!DOCTYPE html>
     <html>
@@ -287,6 +286,7 @@ function generate1HourEmail(contest) {
 }
 
 function generateWelcomeEmail() {
+  // ... (Your existing HTML email template)
   return `
     <!DOCTYPE html>
     <html>
@@ -317,13 +317,16 @@ function generateWelcomeEmail() {
   `;
 }
 
-// API Routes
+// --- API Routes ---
 
 app.get('/api/contests', async (req, res) => {
   try {
-    const contests = await fetchContests();
+    const db = getDb();
+    // Read from the DB cache, which is updated by the cron job
+    const contests = await db.collection('contests').find().sort({ startTime: 1 }).toArray();
     res.json({ success: true, contests });
   } catch (error) {
+    logger.error('Error in /api/contests:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -343,8 +346,8 @@ app.post('/api/subscribe', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
 
-    const data = await readData();
-    const existingIndex = data.subscribers.findIndex(s => s.email === email);
+    const db = getDb();
+    const subscribersCol = db.collection('subscribers');
     
     const subscriber = {
       email,
@@ -353,14 +356,18 @@ app.post('/api/subscribe', async (req, res) => {
       subscribedAt: new Date().toISOString()
     };
     
-    if (existingIndex >= 0) {
-      data.subscribers[existingIndex] = subscriber;
+    // Use upsert to either insert a new subscriber or update an existing one
+    const result = await subscribersCol.updateOne(
+        { email: email }, // Filter
+        { $set: subscriber }, // Data to set
+        { upsert: true } // Options
+    );
+
+    if (result.upsertedCount > 0) {
+        logger.success('New subscriber saved: ' + email);
     } else {
-      data.subscribers.push(subscriber);
+        logger.success('Subscriber updated: ' + email);
     }
-    
-    await writeData(data);
-    logger.success('Subscriber saved');
     
     // Send welcome email
     if (transporter && preferences && preferences.includes('email')) {
@@ -386,54 +393,74 @@ app.post('/api/subscribe', async (req, res) => {
 app.post('/api/unsubscribe', async (req, res) => {
   try {
     const { email } = req.body;
-    const data = await readData();
-    data.subscribers = data.subscribers.filter(s => s.email !== email);
-    await writeData(data);
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required' });
+    }
+    
+    const db = getDb();
+    const result = await db.collection('subscribers').deleteOne({ email: email });
+    
+    if (result.deletedCount === 0) {
+        logger.warn('Unsubscribe attempt for non-existent email: ' + email);
+        return res.status(404).json({ success: false, error: 'Email not found' });
+    }
+
+    logger.success('Unsubscribed: ' + email);
     res.json({ success: true, message: 'Unsubscribed successfully' });
   } catch (error) {
+    logger.error('Unsubscribe error:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
 app.get('/api/subscribers', async (req, res) => {
   try {
-    const data = await readData();
-    res.json({ success: true, subscribers: data.subscribers });
+    const db = getDb();
+    const subscribers = await db.collection('subscribers').find().toArray();
+    res.json({ success: true, subscribers: subscribers.map(s => s.email) });
   } catch (error) {
+    logger.error('Error getting subscribers:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Test endpoints
-app.post('/api/test-sms', async (req, res) => {
-  const { phone } = req.body;
-  if (!phone) {
-    return res.status(400).json({ success: false, error: 'Phone required' });
-  }
-  const success = await sendSMS(phone, 'Test message from CodeSync!');
-  res.json({ success, message: success ? 'SMS sent' : 'SMS failed' });
+// --- API Endpoint for Render Cron Job ---
+// This is the endpoint you will tell Render to call on its schedule.
+app.get('/api/check-reminders', async (req, res) => {
+    // Secure this endpoint
+    if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
+        logger.error('Unauthorized cron job attempt');
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        logger.info('Cron job triggered via API');
+        await checkAndSendReminders(); // Run your existing function
+        res.status(200).json({ success: true, message: 'Reminders checked' });
+    } catch (error) {
+        logger.error('API cron job failed', error);
+        res.status(500).json({ success: false, error: 'Job failed' });
+    }
 });
 
-app.post('/api/test-email', async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ success: false, error: 'Email required' });
-  }
-  const success = await sendEmail(email, 'Test Email', '<h1>Test from CodeSync</h1>');
-  res.json({ success, message: success ? 'Email sent' : 'Email failed' });
-});
 
-// Schedule cron job every hour
+// Schedule cron job every hour (for local development)
+// On Render, you will disable this and use their Cron Job feature to call '/api/check-reminders'
 cron.schedule('0 * * * *', () => {
+  logger.info('Local node-cron job triggered');
   checkAndSendReminders();
 });
 
 // Initialize
-initDataFile().then(() => {
-  logger.info('Data file ready');
-  checkAndSendReminders();
-});
-
-app.listen(PORT, () => {
-  logger.server('Server running on port ' + PORT);
+// We must connect to the DB *before* starting the server
+logger.info('Connecting to database...');
+connectDB().then(() => {
+    // Start the server
+    app.listen(PORT, () => {
+        logger.server(`Server running on port ${PORT}`);
+    });
+    
+    // Run an initial check on startup
+    logger.info('Running initial contest fetch on startup...');
+    checkAndSendReminders();
 });
