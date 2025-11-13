@@ -700,233 +700,241 @@
         </footer>
     </div>
 
-    <script>
-        let allContests = [];
-        let currentFilter = 'all';
+   <script>
+    let allContests = [];
+    let currentFilter = 'all';
 
-        // Load contests on page load
-        async function loadContests() {
-            try {
-                const response = await fetch('/api/contests');
-                const data = await response.json();
-                
-                if (data.success) {
-                    allContests = data.contests;
-                    displayContests(allContests);
-                } else {
-                    document.getElementById('contestsList').innerHTML = 
-                        '<p class="no-contests">Failed to load contests</p>';
-                }
-            } catch (error) {
-                document.getElementById('contestsList').innerHTML = 
-                    '<p class="no-contests">Error loading contests</p>';
+    // Load contests on page load
+    async function loadContests() {
+        try {
+            const response = await fetch('/api/contests');
+            const data = await response.json();
+
+            if (data.success) {
+                allContests = data.contests;
+                displayContests(allContests);
+            } else {
+                document.getElementById('contestsList').innerHTML =
+                    '<p class="no-contests">Failed to load contests</p>';
             }
+        } catch (error) {
+            document.getElementById('contestsList').innerHTML =
+                '<p class="no-contests">Error loading contests</p>';
+        }
+    }
+
+    function getTimeCategory(hoursUntil) {
+        if (hoursUntil < 0) return null;
+        if (hoursUntil < 24) return 'urgent';     // Less than 24 hours - RED
+        if (hoursUntil < 168) return 'soon';      // 1-7 days - ORANGE
+        return 'upcoming';                        // More than 7 days - GREEN
+    }
+
+    function displayContests(contests) {
+        const contestsList = document.getElementById('contestsList');
+
+        // Apply filter before displaying
+        const filteredContests = contests.filter(contest => {
+            if (currentFilter === 'all') return true;
+            return contest.platform === currentFilter;
+        });
+
+        if (filteredContests.length === 0) {
+            if (currentFilter === 'all') {
+                contestsList.innerHTML = '<p class="no-contests">No contests found</p>';
+            } else {
+                contestsList.innerHTML = `<p class="no-contests">No contests found for ${currentFilter}</p>`;
+            }
+            return;
         }
 
-        function getTimeCategory(hoursUntil) {
-            if (hoursUntil < 0) return null;
-            if (hoursUntil < 24) return 'urgent';      // Less than 24 hours - RED
-            if (hoursUntil < 168) return 'soon';       // 1-7 days - ORANGE 
-            return 'upcoming';                         // More than 7 days - GREEN
-        }
+        contestsList.innerHTML = filteredContests.map(contest => {
+            const startTime = new Date(contest.startTime);
+            const now = new Date();
+            const hoursUntil = (startTime - now) / (1000 * 60 * 60);
 
-        function displayContests(contests) {
-            const contestsList = document.getElementById('contestsList');
-            
-            // Apply filter before displaying
-            const filteredContests = contests.filter(contest => {
-                if (currentFilter === 'all') return true;
-                return contest.platform === currentFilter;
-            });
-            
-            if (filteredContests.length === 0) {
-                if (currentFilter === 'all') {
-                    contestsList.innerHTML = '<p class="no-contests">No contests found</p>';
-                } else {
-                    contestsList.innerHTML = `<p class="no-contests">No contests found for ${currentFilter}</p>`;
-                }
-                return;
+            let timeText;
+            let timeBadge = '';
+
+            if (hoursUntil < 0) {
+                timeText = 'Started';
+            } else if (hoursUntil < 1) {
+                const minutes = Math.floor(hoursUntil * 60);
+                timeText = `Starting in ${minutes} minutes`;
+                timeBadge = '<span class="time-badge urgent">STARTING NOW</span>';
+            } else if (hoursUntil < 24) {
+                const hours = Math.floor(hoursUntil);
+                timeText = `Starting in ${hours} hour${hours > 1 ? 's' : ''}`;
+                timeBadge = '<span class="time-badge urgent">TODAY</span>';
+            } else if (hoursUntil < 168) {
+                const days = Math.floor(hoursUntil / 24);
+                timeText = `Starting in ${days} day${days > 1 ? 's' : ''}`;
+                timeBadge = '<span class="time-badge soon">THIS WEEK</span>';
+            } else {
+                const days = Math.floor(hoursUntil / 24);
+                timeText = `Starting in ${days} days`;
+                timeBadge = '<span class="time-badge upcoming">UPCOMING</span>';
             }
 
-            contestsList.innerHTML = filteredContests.map(contest => {
-                const startTime = new Date(contest.startTime);
-                const now = new Date();
-                const hoursUntil = (startTime - now) / (1000 * 60 * 60);
-                
-                let timeText;
-                let timeBadge = '';
-                
-                if (hoursUntil < 0) {
-                    timeText = 'Started';
-                } else if (hoursUntil < 1) {
-                    const minutes = Math.floor(hoursUntil * 60);
-                    timeText = `Starting in ${minutes} minutes`;
-                    timeBadge = '<span class="time-badge urgent">STARTING NOW</span>';
-                } else if (hoursUntil < 24) {
-                    const hours = Math.floor(hoursUntil);
-                    timeText = `Starting in ${hours} hour${hours > 1 ? 's' : ''}`;
-                    timeBadge = '<span class="time-badge urgent">TODAY</span>';
-                } else if (hoursUntil < 168) {
-                    const days = Math.floor(hoursUntil / 24);
-                    timeText = `Starting in ${days} day${days > 1 ? 's' : ''}`;
-                    timeBadge = '<span class="time-badge soon">THIS WEEK</span>';
-                } else {
-                    const days = Math.floor(hoursUntil / 24);
-                    timeText = `Starting in ${days} days`;
-                    timeBadge = '<span class="time-badge upcoming">UPCOMING</span>';
-                }
+            const timeCategory = getTimeCategory(hoursUntil);
 
-                const timeCategory = getTimeCategory(hoursUntil);
-                
-                return `
-                    <div class="contest-item ${timeCategory || ''}" data-platform="${contest.platform}">
-                        ${timeBadge}
-                        <div class="contest-header">
-                            <div class="contest-name">${contest.name}</div>
-                            <div class="platform-tag">${contest.platform}</div>
-                        </div>
-                        <div class="contest-details">
-                            <span>${timeText}</span>
-                            <span>${startTime.toLocaleString()}</span>
-                            <span>Duration: ${contest.duration} hours</span>
-                        </div>
-                        <div class="contest-link">
-                            <a href="${contest.url}" target="_blank">View Contest</a>
-                        </div>
+            return `
+                <div class="contest-item ${timeCategory || ''}" data-platform="${contest.platform}">
+                    ${timeBadge}
+                    <div class="contest-header">
+                        <div class="contest-name">${contest.name}</div>
+                        <div class="platform-tag">${contest.platform}</div>
                     </div>
-                `;
-            }).join('');
-        }
+                    <div class="contest-details">
+                        <span>${timeText}</span>
+                        <span>${startTime.toLocaleString()}</span>
+                        <span>Duration: ${contest.duration} hours</span>
+                    </div>
+                    <div class="contest-link">
+                        <a href="${contest.url}" target="_blank">View Contest</a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
-        function filterContests(platform) {
-            currentFilter = platform;
-            
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase() === platform.toLowerCase()) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            // Re-display contests with the new filter
-            displayContests(allContests);
-        }
+    function filterContests(platform) {
+        currentFilter = platform;
 
-        // Handle subscription form
-        document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
-            const preferences = Array.from(document.querySelectorAll('input[name="preference"]:checked'))
-                .map(cb => cb.value);
-            
-            if (preferences.length === 0) {
-                showMessage('Please select at least one notification method', 'error');
-                return;
-            }
-
-            const subscribeBtn = document.getElementById('subscribeBtn');
-            subscribeBtn.disabled = true;
-            subscribeBtn.textContent = 'Subscribing...';
-
-            try {
-                // Subscribe main user
-                await subscribeUser(email, phone, preferences);
-                
-                showMessage('Successfully subscribed! Check your email for confirmation.', 'success');
-                document.getElementById('subscribeForm').reset();
-                
-                // Reset to email checked by default
-                document.querySelector('input[value="email"]').checked = true;
-            } catch (error) {
-                showMessage('Subscription failed. Please try again.', 'error');
-            } finally {
-                subscribeBtn.disabled = false;
-                subscribeBtn.textContent = 'Subscribe Now';
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.toLowerCase() === platform.toLowerCase()) {
+                btn.classList.add('active');
             }
         });
 
-        async function subscribeUser(email, phone, preferences) {
-            const response = await fetch('/api/subscribe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, phone, preferences })
-            });
-            
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.error);
+        // Re-display contests with the new filter
+        displayContests(allContests);
+    }
+
+    // Handle subscription form
+    document.getElementById('subscribeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
+        const preferences = Array.from(document.querySelectorAll('input[name="preference"]:checked'))
+            .map(cb => cb.value);
+
+        if (preferences.length === 0) {
+            showMessage('Please select at least one notification method', 'error');
+            return;
+        }
+
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        subscribeBtn.disabled = true;
+        subscribeBtn.textContent = 'Subscribing...';
+
+        try {
+            // Call subscribeUser and get the full response data
+            const data = await subscribeUser(email, phone, preferences);
+
+            if (data.success) {
+                showMessage(data.message, 'success'); // Use the message from the backend
+                document.getElementById('subscribeForm').reset();
+
+                // Reset to email checked by default
+                document.querySelector('input[value="email"]').checked = true;
+                // Ensure SMS is unchecked if it was previously checked
+                document.querySelector('input[value="sms"]').checked = false; 
+
+            } else {
+                // If backend indicates failure, show its error message
+                showMessage(data.error || 'Subscription failed. Please try again.', 'error');
             }
+        } catch (error) {
+            console.error('Subscription error:', error);
+            showMessage('An unexpected error occurred. Please try again later.', 'error');
+        } finally {
+            subscribeBtn.disabled = false;
+            subscribeBtn.textContent = 'Subscribe Now';
         }
+    });
 
-        function showMessage(text, type) {
-            const messageEl = document.getElementById('subscribeMessage');
-            messageEl.textContent = text;
-            messageEl.className = `message ${type} show`;
-            
-            setTimeout(() => {
-                messageEl.className = 'message';
-            }, 5000);
-        }
+    async function subscribeUser(email, phone, preferences) {
+        const response = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, phone, preferences })
+        });
 
-        // --- NEW SHARE BUTTON LOGIC ---
-        const shareBtn = document.getElementById('premiumShareBtn');
-        if (shareBtn) {
-            const shareBtnSpan = shareBtn.querySelector('span');
-            const originalBtnText = shareBtnSpan.textContent;
+        // Always return the JSON data, don't throw an error here based on data.success
+        const data = await response.json();
+        return data;
+    }
 
-            shareBtn.addEventListener('click', async () => {
-                const shareData = {
-                    title: 'CodeSync',
-                    text: 'Check out CodeSync - Your Competitive Programming Companion!',
-                    url: window.location.href
-                };
-                
-                try {
-                    if (navigator.share) {
-                        // Use Web Share API
-                        await navigator.share(shareData);
-                        console.log('Shared successfully via Web Share API');
-                    } else {
-                        // Fallback: Copy to clipboard
-                        await navigator.clipboard.writeText(window.location.href);
-                        shareBtnSpan.textContent = 'Link Copied!';
-                        shareBtn.style.opacity = '0.7';
+    function showMessage(text, type) {
+        const messageEl = document.getElementById('subscribeMessage');
+        messageEl.textContent = text;
+        messageEl.className = `message ${type} show`;
 
-                        setTimeout(() => {
-                            shareBtnSpan.textContent = originalBtnText;
-                            shareBtn.style.opacity = '1';
-                        }, 2000);
-                    }
-                } catch (err) {
-                    console.error('Share failed:', err);
-                    // Final fallback in case of error
-                    try {
-                        await navigator.clipboard.writeText(window.location.href);
-                        shareBtnSpan.textContent = 'Link Copied!';
-                        shareBtn.style.opacity = '0.7';
-                        setTimeout(() => {
-                            shareBtnSpan.textContent = originalBtnText;
-                            shareBtn.style.opacity = '1';
-                        }, 2000);
-                    } catch (copyErr) {
-                        console.error('Clipboard copy failed:', copyErr);
-                        shareBtnSpan.textContent = 'Share Failed';
-                         setTimeout(() => {
-                            shareBtnSpan.textContent = originalBtnText;
-                        }, 2000);
-                    }
+        setTimeout(() => {
+            messageEl.className = 'message'; // Hide by removing 'show' class
+        }, 5000);
+    }
+
+    // --- NEW SHARE BUTTON LOGIC ---
+    const shareBtn = document.getElementById('premiumShareBtn');
+    if (shareBtn) {
+        const shareBtnSpan = shareBtn.querySelector('span');
+        const originalBtnText = shareBtnSpan.textContent;
+
+        shareBtn.addEventListener('click', async () => {
+            const shareData = {
+                title: 'CodeSync',
+                text: 'Check out CodeSync - Your Competitive Programming Companion!',
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) {
+                    // Use Web Share API
+                    await navigator.share(shareData);
+                    console.log('Shared successfully via Web Share API');
+                } else {
+                    // Fallback: Copy to clipboard
+                    await navigator.clipboard.writeText(window.location.href);
+                    shareBtnSpan.textContent = 'Link Copied!';
+                    shareBtn.style.opacity = '0.7';
+
+                    setTimeout(() => {
+                        shareBtnSpan.textContent = originalBtnText;
+                        shareBtn.style.opacity = '1';
+                    }, 2000);
                 }
-            });
-        }
-        
-        // Load contests on page load
-        loadContests();
-        
-        // Refresh contests every 5 minutes
-        setInterval(loadContests, 5 * 60 * 1000);
-    </script>
+            } catch (err) {
+                console.error('Share failed:', err);
+                // Final fallback in case of error
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    shareBtnSpan.textContent = 'Link Copied!';
+                    shareBtn.style.opacity = '0.7';
+                    setTimeout(() => {
+                        shareBtnSpan.textContent = originalBtnText;
+                        shareBtn.style.opacity = '1';
+                    }, 2000);
+                } catch (copyErr) {
+                    console.error('Clipboard copy failed:', copyErr);
+                    shareBtnSpan.textContent = 'Share Failed';
+                    setTimeout(() => {
+                        shareBtnSpan.textContent = originalBtnText;
+                    }, 2000);
+                }
+            }
+        });
+    }
+
+    // Load contests on page load
+    loadContests();
+
+    // Refresh contests every 5 minutes
+    setInterval(loadContests, 5 * 60 * 1000);
+</script>
 </body>
 </html>
