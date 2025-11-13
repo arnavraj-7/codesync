@@ -501,6 +501,69 @@ function generateWelcomeEmail() {
     </html>
   `;
 }
+function generateAlreadySubscribedEmail() {
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>You're Already Subscribed! - CodeSync</title>
+            <style>
+                body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; color: #333; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+                table { border-spacing: 0; border-collapse: collapse; }
+                td { padding: 0; }
+                img { border: 0; }
+                .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f4; padding-bottom: 60px; }
+                .main { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                .header { background-color: #f39c12; padding: 40px 30px; text-align: center; color: #ffffff; }
+                .header h1 { margin: 0; font-size: 3rem; font-weight: 800; letter-spacing: 3px; }
+                .header p { margin-top: 10px; font-size: 1rem; color: #e0e0e0; }
+                .content { padding: 40px 30px; text-align: center; }
+                .content h2 { font-size: 2.2rem; margin-bottom: 25px; color: #1a1a1a; }
+                .content p { color: #555; line-height: 1.7; margin-bottom: 25px; font-size: 1rem; }
+                .cta-button { background-color: #f39c12; color: #ffffff; padding: 15px 30px; text-decoration: none; font-weight: 700; display: inline-block; border-radius: 6px; font-size: 1rem; transition: background-color 0.3s ease; margin-top: 20px;}
+                .cta-button:hover { background-color: #e67e22; }
+                .footer { background-color: #1a1a1a; padding: 30px; text-align: center; color: #cccccc; font-size: 0.8rem; border-top: 1px solid #333; }
+                .footer p { margin: 0; }
+
+                @media only screen and (max-width: 620px) {
+                    .main { width: 100%; border-radius: 0; }
+                    .content { padding: 30px 20px; }
+                    .header h1 { font-size: 2.5rem; }
+                    .content h2 { font-size: 1.8rem; }
+                }
+            </style>
+        </head>
+        <body>
+            <center class="wrapper">
+                <div class="main">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td class="header">
+                                <h1>CodeSync</h1>
+                                <p>Competitive Programming Companion</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                <h2>You're Already Subscribed! 👋</h2>
+                                <p>It looks like you're already a valued member of the CodeSync community. We've got your back with contest reminders!</p>
+                                <p>If you meant to update your preferences, don't worry, we've updated them based on your recent submission.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p>CodeSync - Made by Arnav</p>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </center>
+        </body>
+        </html>
+    `;
+}
 
 // --- API Routes ---
 
@@ -516,60 +579,83 @@ app.get('/api/contests', async (req, res) => {
 });
 
 app.post('/api/subscribe', async (req, res) => {
-  logger.separator();
-  logger.info('NEW SUBSCRIPTION');
-  
-  try {
-    const { email, phone, preferences } = req.body;
-    
-    logger.info('Email: ' + email);
-    logger.info('Phone: ' + (phone || 'not provided'));
-    logger.info('Preferences: ' + JSON.stringify(preferences));
-    
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
-    }
+    logger.separator();
+    logger.info('NEW SUBSCRIPTION / UPDATE REQUEST');
 
-    const db = getDb();
-    const subscribersCol = db.collection('subscribers');
-    
-    const subscriber = {
-      email,
-      phone: phone || null,
-      preferences: preferences || ['email'],
-      subscribedAt: new Date().toISOString()
-    };
-    
-    const result = await subscribersCol.updateOne(
-        { email: email },
-        { $set: subscriber },
-        { upsert: true }
-    );
+    try {
+        const { email, phone, preferences } = req.body;
 
-    if (result.upsertedCount > 0) {
-        logger.success('New subscriber saved: ' + email);
-    } else {
-        logger.success('Subscriber updated: ' + email);
-    }
-    
-    if (transporter && preferences && preferences.includes('email')) {
-      await sendEmail(email, 'Welcome to CodeSync!', generateWelcomeEmail());
-    }
-    
-    if (phone && preferences && preferences.includes('sms')) {
-      logger.info('SMS conditions met - sending welcome SMS');
-      await sendSMS(phone, `Welcome to CodeSync! You're subscribed to contest reminders. You'll get notifications 24h and 1h before contests start. - CodeSync`);
-    } else {
-      logger.warn('SMS not sent - Phone: ' + (phone || 'missing') + ', SMS in prefs: ' + (preferences && preferences.includes('sms')));
-    }
-    
-    logger.separator();
-    res.json({ success: true, message: 'Subscribed successfully!' });
-  } catch (error) {
-    logger.error('Subscription error: ' + error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
+        logger.info('Email: ' + email);
+        logger.info('Phone: ' + (phone || 'not provided'));
+        logger.info('Preferences: ' + JSON.stringify(preferences));
+
+        if (!email) {
+            return res.status(400).json({ success: false, error: 'Email is required' });
+        }
+
+        const db = getDb();
+        const subscribersCol = db.collection('subscribers');
+
+        // Check if subscriber already exists
+        const existingSubscriber = await subscribersCol.findOne({ email: email });
+
+        let message = '';
+        if (existingSubscriber) {
+            // Subscriber exists, update their preferences if they provided new ones
+            const updateDoc = {
+                $set: {
+                    phone: phone || existingSubscriber.phone || null, // Update phone if provided, otherwise keep existing
+                    preferences: preferences || existingSubscriber.preferences || ['email'], // Update preferences or keep existing
+                    updatedAt: new Date().toISOString() // Add an update timestamp
+                }
+            };
+            await subscribersCol.updateOne({ email: email }, updateDoc);
+            message = 'You are already subscribed. Your preferences have been updated.';
+            logger.success('Existing subscriber updated: ' + email);
+
+            // Send "already subscribed" email
+            if (transporter && preferences && preferences.includes('email')) {
+                await sendEmail(email, 'CodeSync: You are already subscribed!', generateAlreadySubscribedEmail());
+            }
+
+        } else {
+            // New subscriber
+            const newSubscriber = {
+                email,
+                phone: phone || null,
+                preferences: preferences || ['email'],
+                subscribedAt: new Date().toISOString()
+            };
+            await subscribersCol.insertOne(newSubscriber);
+            message = 'Subscribed successfully!';
+            logger.success('New subscriber saved: ' + email);
+
+            // Send welcome email
+            if (transporter && preferences && preferences.includes('email')) {
+                await sendEmail(email, 'Welcome to CodeSync!', generateWelcomeEmail());
+            }
+        }
+
+        // Send welcome SMS (only for new subscriptions or if phone/sms preference was just added)
+        // More sophisticated logic might be needed if you want to prevent welcome SMS on every update
+        if (phone && preferences && preferences.includes('sms') && (!existingSubscriber || (existingSubscriber && !existingSubscriber.preferences.includes('sms')))) {
+            logger.info('SMS conditions met - sending welcome SMS');
+            await sendSMS(phone, `Welcome to CodeSync! You're subscribed to contest reminders. You'll get notifications 24h and 1h before contests start. - CodeSync`);
+        } else if (phone && preferences && preferences.includes('sms') && existingSubscriber && existingSubscriber.preferences.includes('sms')) {
+             logger.info('SMS for existing subscriber not resent to avoid spam.');
+        } else {
+            logger.warn('SMS not sent - Phone: ' + (phone || 'missing') + ', SMS in prefs: ' + (preferences && preferences.includes('sms')));
+        }
+
+        logger.separator();
+        res.json({ success: true, message: message });
+    } catch (error) {
+        logger.error('Subscription error: ' + error.message);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
+
+
 
 app.post('/api/unsubscribe', async (req, res) => {
   try {
